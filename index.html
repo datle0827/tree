@@ -81,6 +81,115 @@
             10%, 90% { opacity: 1; }
         }
 
+        #gift-message {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            z-index: 2500;
+            max-width: 80%;
+            text-align: center;
+            animation: giftPopup 0.5s ease-out;
+        }
+
+        #gift-message.active {
+            display: block;
+        }
+
+        @keyframes giftPopup {
+            0% {
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 0;
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.1);
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+        }
+
+        #gift-message h2 {
+            color: #ffd700;
+            font-size: 32px;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        #gift-message p {
+            color: white;
+            font-size: 18px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        #gift-message button {
+            background: #ffd700;
+            color: #1a472a;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        #gift-message button:hover {
+            background: #ffed4e;
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 768px) {
+            #gift-message {
+                padding: 20px 25px;
+                max-width: 90%;
+            }
+
+            #gift-message h2 {
+                font-size: 24px;
+            }
+
+            #gift-message p {
+                font-size: 15px;
+            }
+        }
+
+        .gift-sparkles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            top: 0;
+            left: 0;
+        }
+
+        .sparkle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #ffd700;
+            border-radius: 50%;
+            animation: sparkle-float 2s ease-out forwards;
+        }
+
+        @keyframes sparkle-float {
+            0% {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) scale(0);
+                opacity: 0;
+            }
+        }
+
         #modal {
             display: none;
             position: fixed;
@@ -262,15 +371,11 @@
 <body>
     <div id="merry-christmas">🎄 MERRY CHRISTMAS 2025 🎄</div>
 
-    <div id="upload-section">
-        <h3>🎅 Thêm ảnh lên cây</h3>
-        <input type="file" id="file-input" accept="image/*" multiple>
-        <p style="font-size: 12px; color: #666; margin-top: 5px;">Chọn nhiều ảnh cùng lúc</p>
-    </div>
+    
 
     <div class="controls">
-        <p class="desktop-hint">🖱️ Kéo chuột để xoay • Lăn chuột để thu phóng • Click ảnh để phóng to</p>
-        <p class="mobile-hint" style="display: none;">👆 Vuốt để xoay • 2 ngón để zoom • Chạm ảnh để phóng to</p>
+        <p class="desktop-hint">🖱️ Kéo chuột để xoay • Lăn chuột để thu phóng • Click để xem</p>
+        <p class="mobile-hint" style="display: none;">👆 Vuốt để xoay • 2 ngón để zoom • Chạm để xem</p>
     </div>
 
     <div id="modal">
@@ -279,9 +384,10 @@
         <img id="modal-img" src="" alt="Ảnh phóng to">
     </div>
 
-    <div class="zoom-hint" id="zoom-hint">
-        <span class="desktop-hint">💡 Lăn chuột để zoom • Kéo để di chuyển ảnh</span>
-        <span class="mobile-hint" style="display: none;">💡 2 ngón để zoom • Vuốt để di chuyển ảnh</span>
+    <div id="gift-message">
+        <div class="gift-sparkles"></div>
+        <p id="gift-text"></p>
+        <button onclick="closeGiftMessage()">Đóng</button>
     </div>
 
     <div id="container"></div>
@@ -291,6 +397,42 @@
         let scene, camera, renderer, tree, photoFrames = [];
         let userImages = [];
         let lights = [];
+        let giftBoxes = []; // Lưu các hộp quà để có thể click
+
+        const christmasWishes = [
+            "🎄 Giáng sinh an lành, tràn đầy niềm vui và hạnh phúc! 🎅",
+            "⭐ Merry Christmas! Chúc Hà Hope sớm có người yêu nhé, bớt khùng đi, không được thì thôi vậy!🎁",
+            "🎉 Giáng sinh vui vẻ! Chúc Huy Beo gặp nhiều may mắn, tiền vào như nước (để còn đưa các bạn đi ăn💝), giảm cân đi!",
+            "🌟 Hô hô hồ! 🎄",
+            "🎅 Háp pi niu dia! ✨",
+            "🎁 Tự tìm quà đi! 🎊",
+            "⛄ anh tung ngay đồng xu... 🎉"
+        ];
+
+        function showGiftMessage() {
+            const randomWish = christmasWishes[Math.floor(Math.random() * christmasWishes.length)];
+            document.getElementById('gift-text').textContent = randomWish;
+            document.getElementById('gift-message').classList.add('active');
+            createGiftSparkles();
+        }
+
+        function closeGiftMessage() {
+            document.getElementById('gift-message').classList.remove('active');
+        }
+
+        function createGiftSparkles() {
+            const container = document.querySelector('.gift-sparkles');
+            container.innerHTML = '';
+            
+            for (let i = 0; i < 20; i++) {
+                const sparkle = document.createElement('div');
+                sparkle.className = 'sparkle';
+                sparkle.style.left = Math.random() * 100 + '%';
+                sparkle.style.top = Math.random() * 100 + '%';
+                sparkle.style.animationDelay = (Math.random() * 0.5) + 's';
+                container.appendChild(sparkle);
+            }
+        }
 
         function init() {
             // Phát hiện thiết bị mobile
@@ -578,7 +720,12 @@
                 );
 
                 box.rotation.y = Math.random() * Math.PI;
+                
+                // Đánh dấu là hộp quà để có thể click
+                box.userData.isGift = true;
+                
                 tree.add(box);
+                giftBoxes.push(box);
 
                 const ribbonGeo = new THREE.BoxGeometry(size * 1.02, size * 1.02, size * 0.2);
                 const ribbonMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
@@ -820,6 +967,14 @@
 
                 for (let intersect of intersects) {
                     let obj = intersect.object;
+                    
+                    // Kiểm tra xem có phải hộp quà không
+                    if (obj.userData.isGift) {
+                        showGiftMessage();
+                        return;
+                    }
+                    
+                    // Kiểm tra xem có phải ảnh không
                     while (obj.parent && !obj.userData.imageUrl) {
                         obj = obj.parent;
                     }
